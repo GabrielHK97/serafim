@@ -14,7 +14,7 @@ There are a bunch of operators that can be used to further customize the search.
 | LESS\_EQUAL    | <=              |
 | ILIKE          | ILIKE           |
 | LIKE           | LIKE            |
-| IN             | IN              |
+| IN             | IN [n1, n2, ...]|
 | NOT            | NOT             |
 | BETWEEN        | BETWEEN x AND y |
 | NULL           | NULL            |
@@ -44,7 +44,7 @@ const search2: Search = {
 // search1 and search2 are equivalent
 ```
 
-With other operators, it is necessary to specify the searchTerm. The searchTerm can be a number, a string or an array. Example:
+With other operators:
 
 ```javascript
 const search: Search = {
@@ -57,8 +57,7 @@ const search: Search = {
 	]
 };
 ```
-
-The searchTerm becomes an array when the operator **BETWEEN** or **IN** is used:
+The searchTerm can be a number, a string or an array. It becomes an array when the operator **BETWEEN** or **IN** is used:
 
 ```javascript
 const search1: Search = {

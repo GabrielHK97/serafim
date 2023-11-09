@@ -1,17 +1,17 @@
-# Dyfono
+# Serafim
 
-### Why Dyfono?
+### Why Serafim?
 
-Dyfono is a word play of the word "Dífono", which in portuguese means: A letter with two sounds. It is also an acronym of **Dy**namic **F**ind **O**ptions **No**tation. Just like a letter with two sounds, the object Search has two objects, Where and Order.
+Serafim the portuguese word for Seraph. It is also an acronym of **Se**arch **R**equests **A**PI for TypeORM's **Fi**nd **M**ethod.
 
 ### What is the purpose of this package?
 
-This package aims to facilitate find options for TypeORM. It is a frontend and backend API to make dynamic queries using custom notation.
+This package aims to facilitate fetching custom data when using TypeORM, providing an API to make dynamic queries using JSON.
 
 ### Instalation
 
 ```
-npm install --save dyfono
+npm install --save serafim
 ```
 
 ### Introduction and Usage
@@ -77,13 +77,13 @@ export class Address {
 }
 ```
 
-To extract custom information, you have to write custom queries, and there are two ways to do that in TypeORM. The first is to write queries using raw SQL, which uses the query method. The other way is to use the find method and specify the params. In both ways you would have to write an API, either to write custom raw SQL, either to customize the params. This package is an API that customizes the params of the find method, but in a easier way.
+To extract custom information, you have to write custom queries, and there are two ways to do that in TypeORM. The first is to write queries using raw SQL, which uses the query method. The second way is to use the find method and specify the params. In both ways one would have to write an API, either to write custom raw SQL, either to customize the params. This package uses the latter, by translating JSON into meaningful params.
 
 Only using TypeORM:
 
 ```jsx
-//backend
-userRepository.find({
+//frontend
+const search = {
 	relations: {
 		person: {
 			address: true
@@ -111,10 +111,17 @@ userRepository.find({
 			}
 		}
 	}
+}
+
+//backend
+userRepository.find({
+	relations: search.relations,
+	where: search.where,
+	order: search.order,
 })
 ```
 
-Using Dyfono:
+Using Serafim:
 
 ```jsx
 //frontend
@@ -143,11 +150,11 @@ userRepository.find({
 })
 ```
 
-With pure TypeORM, you need to know in advance what relations will be used in the search, whereas with Dyfono, you just type what you need to search. Plus, with only TypeORM, you would have to find a way to translate the params of your search in the frontend to a compatible find medthod param object in the backend. With Dyfono it is much easier as you can see, it provides an API in the frontend and in the backend!
+With pure TypeORM, you need to know in advance what relations will be used in order to fetch custom data, whereas with Serafim, you just type what you need to fetch. With Serafim it is much easier as you can see!
 
 ### Documentation
 
-[Docs](https://dyfono.gabrielhk.dev/)
+[Docs](https://serafim.gabrielhk.dev/)
 
 ### Donations
 
