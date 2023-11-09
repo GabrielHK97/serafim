@@ -1,6 +1,6 @@
 {
-  "name": "dolfin",
-  "version": "1.3.17",
+  "name": "serafim",
+  "version": "1.0.0",
   "description": "A library that provides custom JSON notation for the find method of TypeORM",
   "main": "index.js",
   "scripts": {
