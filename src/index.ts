@@ -163,8 +163,6 @@ function setPropertyWhereOfObject(path: string, object: any, value: any): void {
     object[isNumber(key) ? 0 : key] = isNotLastPathElement(index, path)
       ? object[isNumber(key) ? 0 : key]
         ? object[isNumber(key) ? 0 : key]
-        : isNumber(key)
-        ? []
         : {}
       : value;
     if (object) object = object[isNumber(key) ? 0 : key];
@@ -225,7 +223,7 @@ export function getWhere(where: any): Array<any> {
     const path = generatePathOfWhereObject(keys[index + WhereOffset.KEY], key);
     setPropertyOfObject(path, object, value);
   }
-  return reduceWhereObject(object)[0];
+  return reduceWhereObject(object);
 }
 
 export function getOrder(orders: Order[]): any {
@@ -237,15 +235,3 @@ export function getOrder(orders: Order[]): any {
 }
 
 export { VarTypes, OperationTypes, Where, Order, Search };
-
-//console.log(
-//  (
-//    getWhere([
-//      {
-//        field: "debt.dueDate",
-//        operation: OperationTypes.IN,
-//        value: [OperationTypes.BETWEEN, OperationTypes.ILIKE],
-//      },
-//    ]) as any
-//  ).debt.dueDate._getSql()
-//);
