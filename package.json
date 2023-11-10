@@ -1,6 +1,6 @@
 {
   "name": "serafim",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A library that provides custom JSON notation for the find method of TypeORM",
   "main": "index.js",
   "scripts": {
@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/GabrielHK97/dyfono.git"
+    "url": "git+https://github.com/GabrielHK97/serafim.git"
   },
   "keywords": [
     "typeorm"
@@ -19,9 +19,9 @@
   "author": "Gabriel Kubota",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/GabrielHK97/dyfono/issues"
+    "url": "https://github.com/GabrielHK97/serafim/issues"
   },
-  "homepage": "https://github.com/GabrielHK97/dyfono#readme",
+  "homepage": "https://github.com/GabrielHK97/serafim#readme",
   "devDependencies": {
     "typescript": "^5.1.6"
   },
