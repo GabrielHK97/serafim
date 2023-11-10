@@ -6,7 +6,8 @@
   "scripts": {
     "launch": "tsc && npm publish",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "tests": "npx ts-node src/tests.ts"
+    "tests": "npx ts-node src/tests.ts",
+    "build": "npx tsc && npm publish"
   },
   "repository": {
     "type": "git",

@@ -1,5 +1,6 @@
 import { OperationTypes } from "../constants/operation-types.constants";
-export declare class Where {
+import { Operations } from "./operations.class";
+export declare class Where extends Operations {
     field: string;
     operation: OperationTypes;
     value: any;
