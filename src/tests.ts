@@ -1,5 +1,4 @@
 import { getWhere } from ".";
-import { Where } from "./classes/where.class";
 console.log(
   getWhere([
     {
