@@ -1,9 +1,9 @@
 {
   "name": "serafim",
-  "version": "1.0.8",
+  "version": "1.0.19",
   "description": "A library that provides custom JSON notation for the find method of TypeORM",
-  "main": "index.js",
-  "types": "index.d.ts",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "scripts": {
     "launch": "tsc && npm publish",
     "test": "echo \"Error: no test specified\" && exit 1",

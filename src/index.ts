@@ -4,6 +4,7 @@ import { VarTypes } from "./constants/var-types.constants";
 import { Order } from "./classes/order.class";
 import { Search } from "./classes/search.class";
 import { Where } from "./classes/where.class";
+import { FindParams } from "./classes/find-params.class";
 
 enum WhereOffset {
   KEY = 0,
@@ -125,7 +126,7 @@ function getAllKeysFromObject<T extends object>(
   }, []);
 }
 
-function getUniqueKeysFromObject(object: any) {
+function getUniqueKeysFromObject(object: object) {
   return [
     ...new Set(
       getAllKeysFromObject(object).map((element: Property) => {
@@ -135,7 +136,7 @@ function getUniqueKeysFromObject(object: any) {
   ] as any;
 }
 
-function getPropertyFromObject(path: string, object: any): any {
+function getPropertyFromObject(path: string, object: object): any {
   let property = object;
   path.split(".").forEach((key) => {
     if (property) property = property[key];
@@ -147,7 +148,7 @@ function getPropertyFromObject(path: string, object: any): any {
   }
 }
 
-function setPropertyOfObject(path: string, object: any, value: any): void {
+function setPropertyOfObject(path: string, object: object, value: any): void {
   path.split(".").forEach((key, index) => {
     object[key] = isNotLastPathElement(index, path)
       ? object[key]
@@ -158,7 +159,11 @@ function setPropertyOfObject(path: string, object: any, value: any): void {
   });
 }
 
-function setPropertyWhereOfObject(path: string, object: any, value: any): void {
+function setPropertyWhereOfObject(
+  path: string,
+  object: object,
+  value: any
+): void {
   path.split(".").forEach((key, index) => {
     object[isNumber(key) ? 0 : key] = isNotLastPathElement(index, path)
       ? object[isNumber(key) ? 0 : key]
@@ -175,22 +180,23 @@ function removeLastElementOfPath(path: string): string {
   return p.join(".");
 }
 
-function reduceWhereObject(obj: any) {
-  const object = [];
+function reduceWhereObject(object: object) {
+  const obj = [];
   const keys = [
     ...new Set(
-      getUniqueKeysFromObject(obj).map((key) => {
+      getUniqueKeysFromObject(object).map((key) => {
         return removeLastElementOfPath(key);
       })
     ),
   ] as string[];
   keys.forEach((key) => {
-    setPropertyWhereOfObject(key, object, getPropertyFromObject(key, obj));
+    setPropertyWhereOfObject(key, obj, getPropertyFromObject(key, object));
   });
-  return object;
+  return obj;
 }
 
-export function getRelations(where: any): any {
+export function getRelations(where: object): object {
+  if (!where) return {};
   const object: any = {};
   const keys = getUniqueKeysFromObject(where);
   for (
@@ -208,7 +214,8 @@ export function getRelations(where: any): any {
   return object;
 }
 
-export function getWhere(where: any): Array<any> {
+export function getWhere(where: object): Array<object> {
+  if (!where) return [];
   const object: any = {};
   const keys = getUniqueKeysFromObject(where);
   for (
@@ -226,12 +233,11 @@ export function getWhere(where: any): Array<any> {
   return reduceWhereObject(object);
 }
 
-export function getOrder(orders: Order[]): any {
+export function getOrder(order: Order): object {
+  if (!order) return {};
   let object: any = {};
-  orders.forEach((order) => {
-    setPropertyOfObject(order.field, object, order.sortOrder);
-  });
+  setPropertyOfObject(order.field, object, order.sortOrder);
   return object;
 }
 
-export { VarTypes, OperationTypes, Where, Order, Search };
+export { VarTypes, OperationTypes, Where, Order, Search, FindParams };

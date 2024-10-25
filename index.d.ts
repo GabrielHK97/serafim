@@ -1,7 +1,7 @@
 declare module "serafim" {
-  export function getWhere(where: any): Array<any>;
-  export function getRelations(where: any): any;
-  export function getOrder(orders: Order[]): any;
+  export function getWhere(where: object): Array<object>;
+  export function getRelations(where: object): object;
+  export function getOrder(order: Order): object;
 
   export class Order {
     field: string;
@@ -17,6 +17,12 @@ declare module "serafim" {
   export class Search {
     where: Where[];
     order: Order;
+  }
+
+  export class FindParams {
+    search: Search;
+    skip: number;
+    take: number;
   }
 
   export enum VarTypes {
