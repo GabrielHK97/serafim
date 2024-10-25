@@ -20,9 +20,9 @@ declare module "serafim" {
   }
 
   export class FindParams {
-    search: Search;
-    skip: number;
-    take: number;
+    search?: Search;
+    skip?: number;
+    take?: number;
   }
 
   export enum VarTypes {
