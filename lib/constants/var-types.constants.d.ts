@@ -1,7 +1,7 @@
-export declare enum VarTypes {
-    STRING = "string",
-    DATE = "date",
-    NUMBER = "number",
-    BIGINT = "bigint",
-    OBJECT = "object"
-}
+export declare const VarTypes: {
+    readonly STRING: "string";
+    readonly DATE: "date";
+    readonly NUMBER: "number";
+    readonly BIGINT: "bigint";
+    readonly OBJECT: "object";
+};

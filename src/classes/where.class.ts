@@ -1,13 +1,13 @@
 import { OperationTypes } from "../constants/operation-types.constants";
-import { Operations } from "./operations.class";
 
-export class Where extends Operations {
+export type OperationType = typeof OperationTypes[keyof typeof OperationTypes];
+
+export class Where {
   field: string;
-  operation: OperationTypes;
+  operation: OperationType;
   value: any;
 
-  constructor(field?: string, operation?: OperationTypes, value?: any) {
-    super();
+  constructor(field?: string, operation?: OperationType, value?: any) {
     this.field = field ?? "";
     this.operation = operation ?? OperationTypes.EQUAL;
     this.value = value ?? "";

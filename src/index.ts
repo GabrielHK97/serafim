@@ -41,6 +41,8 @@ function generateRawSQL(value: any, operation: string): any {
           OperationTypes.NULL,
           OperationTypes.TRUE,
           OperationTypes.FALSE,
+          OperationTypes.EQUAL,
+          OperationTypes.NOT_EQUAL
         ].includes(value)
           ? `${alias} ${operation} ${value}`
           : `${alias} ${operation} '${value}'`;
@@ -66,12 +68,12 @@ function generateRawSQL(value: any, operation: string): any {
         if (operation === OperationTypes.BETWEEN) {
           rawSQL = Raw((alias) => {
             return `${alias} ${OperationTypes.BETWEEN} ${
-              typeof value[0] !== VarTypes.NUMBER ||
+              typeof value[0] !== VarTypes.NUMBER &&
               typeof value[0] !== VarTypes.BIGINT
                 ? `'${value[0]}'`
                 : value[0]
             } AND ${
-              typeof value[1] !== VarTypes.NUMBER ||
+              typeof value[1] !== VarTypes.NUMBER &&
               typeof value[1] !== VarTypes.BIGINT
                 ? `'${value[1]}'`
                 : value[1]
@@ -80,11 +82,10 @@ function generateRawSQL(value: any, operation: string): any {
         }
         if (operation === OperationTypes.IN) {
           const v =
-            typeof value !== VarTypes.BIGINT || typeof value !== VarTypes.NUMBER
+            typeof value[0] !== VarTypes.BIGINT &&
+            typeof value[0] !== VarTypes.NUMBER
               ? `(${value
-                  .map((val) => {
-                    return `'${val}'`;
-                  })
+                  .map((val) => `'${val}'`)
                   .join(",")})`
               : `(${value.join(",")})`;
           rawSQL = Raw((alias) => {
@@ -107,7 +108,7 @@ function getAllKeysFromObject<T extends object>(
   return Object.entries(object).reduce((result: string[], [key, value]) => {
     const currentObject: Property = {
       path: lastPath
-        ? Array.isArray(object) && lastPath.split("").includes(".")
+        ? Array.isArray(object) && lastPath.split(".").length
           ? lastPath
           : `${lastPath}.${key}`
         : key,
@@ -120,18 +121,14 @@ function getAllKeysFromObject<T extends object>(
           ? getAllKeysFromObject(value, currentObject.path)
           : []),
       ])
-      .filter((element: any) => {
-        return !element.isObject;
-      });
+      .filter((element: any) => !element.isObject);
   }, []);
 }
 
 function getUniqueKeysFromObject(object: object) {
   return [
     ...new Set(
-      getAllKeysFromObject(object).map((element: Property) => {
-        return element.path;
-      })
+      getAllKeysFromObject(object).map((element: Property) => element.path)
     ),
   ] as any;
 }
@@ -141,11 +138,7 @@ function getPropertyFromObject(path: string, object: object): any {
   path.split(".").forEach((key) => {
     if (property) property = property[key];
   });
-  if (property != undefined) {
-    return property;
-  } else {
-    return "";
-  }
+  return property !== undefined ? property : "";
 }
 
 function setPropertyOfObject(path: string, object: object, value: any): void {
@@ -184,9 +177,9 @@ function reduceWhereObject(object: object) {
   const obj = [];
   const keys = [
     ...new Set(
-      getUniqueKeysFromObject(object).map((key) => {
-        return removeLastElementOfPath(key);
-      })
+      getUniqueKeysFromObject(object).map((key) =>
+        removeLastElementOfPath(key)
+      )
     ),
   ] as string[];
   keys.forEach((key) => {
@@ -225,7 +218,8 @@ export function getWhere(where: object): Array<object> {
   ) {
     const key = getPropertyFromObject(keys[index + WhereOffset.KEY], where);
     const val = getPropertyFromObject(keys[index + WhereOffset.VALUE], where);
-    let op = getPropertyFromObject(keys[index + WhereOffset.OPERATION], where);
+    let op = OperationTypes[getPropertyFromObject(keys[index + WhereOffset.OPERATION], where)];
+    console.log(op);
     const value = val ? generateRawSQL(val, op) : IsNull();
     const path = generatePathOfWhereObject(keys[index + WhereOffset.KEY], key);
     setPropertyOfObject(path, object, value);
