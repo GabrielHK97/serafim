@@ -15,8 +15,8 @@ declare module "serafim" {
   }
 
   export class Search {
-    where: Where[];
-    order: Order;
+    where?: Where[];
+    order?: Order;
   }
 
   export class FindParams {

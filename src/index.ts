@@ -41,8 +41,6 @@ function generateRawSQL(value: any, operation: string): any {
           OperationTypes.NULL,
           OperationTypes.TRUE,
           OperationTypes.FALSE,
-          OperationTypes.EQUAL,
-          OperationTypes.NOT_EQUAL
         ].includes(value)
           ? `${alias} ${operation} ${value}`
           : `${alias} ${operation} '${value}'`;
@@ -219,7 +217,6 @@ export function getWhere(where: object): Array<object> {
     const key = getPropertyFromObject(keys[index + WhereOffset.KEY], where);
     const val = getPropertyFromObject(keys[index + WhereOffset.VALUE], where);
     let op = OperationTypes[getPropertyFromObject(keys[index + WhereOffset.OPERATION], where)];
-    console.log(op);
     const value = val ? generateRawSQL(val, op) : IsNull();
     const path = generatePathOfWhereObject(keys[index + WhereOffset.KEY], key);
     setPropertyOfObject(path, object, value);
