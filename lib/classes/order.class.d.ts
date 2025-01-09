@@ -5,7 +5,7 @@ export declare enum SortConstants {
     DESC = "desc"
 }
 export declare class Order extends Operations {
-    field: string;
-    sortOrder: string;
+    field?: string;
+    sortOrder?: string;
     constructor(field?: string, sortOrder?: string);
 }

@@ -7,8 +7,8 @@ export declare enum SortConstants {
 }
 
 export class Order extends Operations {
-  field: string;
-  sortOrder: string;
+  field?: string;
+  sortOrder?: string;
 
   constructor(field?: string, sortOrder?: string) {
     super();
