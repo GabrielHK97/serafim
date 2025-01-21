@@ -18,20 +18,6 @@ interface Property {
   isObject: boolean;
 }
 
-function isNotLastPathElement(index: number, path: string): boolean {
-  return index < path.split(".").length - 1;
-}
-
-function isNumber(number: string): boolean {
-  return Number.isInteger(Number.parseInt(number));
-}
-
-function generatePathOfWhereObject(keys: string, key: string): string {
-  let path = keys.split(".");
-  path.pop();
-  return [...path, key].join(".");
-}
-
 function generateRawSQL(value: any, operation: string): any {
   let rawSQL;
   switch (typeof value) {
@@ -137,6 +123,7 @@ function getUniqueKeysFromObject(object: object) {
 }
 
 function getPropertyFromObject(path: string, object: object): any {
+  if (!path) return null;
   let property = object;
   path.split(".").forEach((key) => {
     if (property) property = property[key];
@@ -149,50 +136,21 @@ function getPropertyFromObject(path: string, object: object): any {
 }
 
 function setPropertyOfObject(path: string, object: object, value: any): void {
-  path.split(".").forEach((key, index) => {
-    object[key] = isNotLastPathElement(index, path)
-      ? object[key]
-        ? object[key]
-        : {}
-      : value;
-    if (object) object = object[key];
+  const keys = path.split(".");
+  let current = object;
+  keys.forEach((key, index) => {
+    if (index === keys.length - 1) {
+      current[key] = value;
+    } else {
+      current[key] = current[key] || {};
+      current = current[key];
+    }
   });
 }
 
-function setPropertyWhereOfObject(
-  path: string,
-  object: object,
-  value: any
-): void {
-  path.split(".").forEach((key, index) => {
-    object[isNumber(key) ? 0 : key] = isNotLastPathElement(index, path)
-      ? object[isNumber(key) ? 0 : key]
-        ? object[isNumber(key) ? 0 : key]
-        : {}
-      : value;
-    if (object) object = object[isNumber(key) ? 0 : key];
-  });
-}
 
-function removeLastElementOfPath(path: string): string {
-  let p = path.split(".");
-  p.pop();
-  return p.join(".");
-}
-
-function reduceWhereObject(object: object) {
-  const obj = [];
-  const keys = [
-    ...new Set(
-      getUniqueKeysFromObject(object).map((key) => {
-        return removeLastElementOfPath(key);
-      })
-    ),
-  ] as string[];
-  keys.forEach((key) => {
-    setPropertyWhereOfObject(key, obj, getPropertyFromObject(key, object));
-  });
-  return obj;
+function reduceWhereObject(object: object): Array<object> {
+  return Object.entries(object).map(([key, value]) => ({ [key]: value }));
 }
 
 export function getRelations(where: object): object {
@@ -214,24 +172,18 @@ export function getRelations(where: object): object {
   return object;
 }
 
-export function getWhere(where: object): Array<object> {
-  if (!where) return [];
-  const object: any = {};
-  const keys = getUniqueKeysFromObject(where);
-  for (
-    let index = 0;
-    index < keys.length;
-    index += WhereOffset.NUMBER_OF_PROPERTIES
-  ) {
-    const key = getPropertyFromObject(keys[index + WhereOffset.KEY], where);
-    const val = getPropertyFromObject(keys[index + WhereOffset.VALUE], where);
-    let op = getPropertyFromObject(keys[index + WhereOffset.OPERATION], where);
-    const value = val ? generateRawSQL(val, op) : IsNull();
-    const path = generatePathOfWhereObject(keys[index + WhereOffset.KEY], key);
-    setPropertyOfObject(path, object, value);
-  }
-  return reduceWhereObject(object);
+export function getWhere(where: Array<Where>): object {
+  if (!where || !Array.isArray(where)) return {};
+  const result: any = {};
+  where.forEach(({ field, operation, value }, index) => {
+    if (!field || !operation) return;
+    const generatedValue = value === null ? IsNull() : generateRawSQL(value, operation);
+    setPropertyOfObject(field, result, generatedValue);
+  });
+
+  return result;
 }
+
 
 export function getOrder(order: Order): object {
   if (!order) return {};

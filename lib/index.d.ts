@@ -5,6 +5,6 @@ import { Search } from "./classes/search.class";
 import { Where } from "./classes/where.class";
 import { FindParams } from "./classes/find-params.class";
 export declare function getRelations(where: object): object;
-export declare function getWhere(where: object): Array<object>;
+export declare function getWhere(where: Array<Where>): object;
 export declare function getOrder(order: Order): object;
 export { VarTypes, OperationTypes, Where, Order, Search, FindParams };

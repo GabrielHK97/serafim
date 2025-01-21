@@ -1,16 +1,16 @@
-import { getWhere } from ".";
-
-enum Teste {
-  ONE = "1",
-  TWO = "2",
-}
+import { getWhere, OperationTypes } from ".";
 
 console.log(
   getWhere([
     {
-      field: "accountId",
-      operation: "EQUAL",
-      value: "one",
+      field: 'removedAtDate',
+      operation: OperationTypes.EQUAL,
+      value: null,
+    },
+    {
+      field: 'onlineStore',
+      operation: OperationTypes.EQUAL,
+      value: false,
     },
   ])
 );
