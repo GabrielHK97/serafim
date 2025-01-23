@@ -5,28 +5,48 @@ import { Search } from "./classes/search.class";
 import { Where } from "./classes/where.class";
 import { FindParams } from "./classes/find-params.class";
 /**
- * These helpers allow you to write:
- *   AND(condition1, condition2, OR(...))
- *   OR(condition1, condition2, AND(...))
+ * We define a union type for advanced nested logic:
+ *  - A single "leaf" condition (Where)
+ *  - An AND node: { $and: WhereExpression[] }
+ *  - An OR node:  { $or: WhereExpression[] }
  */
-export declare function AND(...conditions: any[]): {
-    $and: any[];
-};
-export declare function OR(...conditions: any[]): {
-    $or: any[];
+export type WhereExpression = Where | {
+    $and: WhereExpression[];
+} | {
+    $or: WhereExpression[];
 };
 /**
- * This is the main entry point for building a TypeORM-compatible "where" clause
- * from nested AND/OR expressions or from an array of leaf conditions (old plugin style).
+ * If your old code calls getWhere([...]) => interpret as AND of the array
+ * each item can be WhereExpression or just Where
  */
-export declare function getWhere(expression: any): object | object[];
+export type WhereExpressionArray = WhereExpression[];
 /**
- * Because you originally had a "getRelations" function that infers relationships
- * from the where object, you can keep it, but nested logic might require rethinking.
+ * AND(...) => { $and: [ ... ] }
+ */
+export declare function AND(...conditions: WhereExpression[]): WhereExpression;
+/**
+ * OR(...) => { $or: [ ... ] }
+ */
+export declare function OR(...conditions: WhereExpression[]): WhereExpression;
+/**
+ * The main entry point for building a TypeORM-compatible "where" clause
+ * from nested AND/OR expressions or from an array of leaf conditions (old style).
+ */
+export declare function getWhere(expression: WhereExpression | WhereExpressionArray): object | object[];
+/**
+ * Provide your VarTypes and OperationTypes if needed
+ */
+export { VarTypes, OperationTypes };
+/**
+ * Return a minimal set of relationships from a where object.
+ * If you rely on nested logic, you might need to adapt or remove.
  */
 export declare function getRelations(where: object): object;
 /**
- * Reuse your "getOrder" for sorting:
+ * Example "getOrder" for sorting
  */
 export declare function getOrder(order: Order): object;
-export { VarTypes, OperationTypes, Where, Order, Search, FindParams };
+/**
+ * Export other classes if needed
+ */
+export { Order, Search, Where, FindParams };

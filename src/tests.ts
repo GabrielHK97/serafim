@@ -1,16 +1,11 @@
-import { getWhere, OperationTypes } from ".";
+import { AND, getWhere, OperationTypes } from ".";
 
 console.log(
-  getWhere([
-    {
-      field: 'removedAtDate',
+  getWhere(
+    AND({
+      field: "storeId",
       operation: OperationTypes.EQUAL,
-      value: null,
-    },
-    {
-      field: 'onlineStore',
-      operation: OperationTypes.EQUAL,
-      value: false,
-    },
-  ])
+      value: 123,
+    })
+  )
 );

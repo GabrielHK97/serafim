@@ -1,11 +1,10 @@
 import { Order } from "./order.class"
-import { Where } from "./where.class"
 
 export class Search {
-    where?: Where[];
+    where?: any;
     order?: Order;
 
-    constructor(where?: Where[], order?: Order) {
+    constructor(where?: any, order?: Order) {
         this.where = where;
         this.order = order;
     }
