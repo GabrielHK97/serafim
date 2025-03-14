@@ -6,33 +6,17 @@ import { Search } from "./classes/search.class";
 import { Where } from "./classes/where.class";
 import { FindParams } from "./classes/find-params.class";
 
-/**
- * We define a union type for advanced nested logic:
- *  - A single "leaf" condition (Where)
- *  - An AND node: { $and: WhereExpression[] }
- *  - An OR node:  { $or: WhereExpression[] }
- */
 export type WhereExpression =
   | Where
   | { $and: WhereExpression[] }
   | { $or: WhereExpression[] };
 
-/** 
- * If your old code calls getWhere([...]) => interpret as AND of the array
- * each item can be WhereExpression or just Where 
- */
 export type WhereExpressionArray = WhereExpression[];
 
-/** 
- * AND(...) => { $and: [ ... ] }
- */
 export function AND(...conditions: WhereExpression[]): WhereExpression {
   return { $and: conditions };
 }
 
-/** 
- * OR(...) => { $or: [ ... ] }
- */
 export function OR(...conditions: WhereExpression[]): WhereExpression {
   return { $or: conditions };
 }
@@ -49,14 +33,8 @@ interface Property {
   isObject: boolean;
 }
 
-/**
- * The main entry point for building a TypeORM-compatible "where" clause
- * from nested AND/OR expressions or from an array of leaf conditions (old style).
- */
 export function getWhere(expression: WhereExpression | WhereExpressionArray): object | object[] {
   if (!expression) return {};
-
-  // If the user passes an array => treat as AND
   if (Array.isArray(expression)) {
     if (expression.length === 0) return {};
     const exprObject = { $and: expression };
@@ -65,51 +43,32 @@ export function getWhere(expression: WhereExpression | WhereExpressionArray): ob
     if (arr.length === 1) return arr[0];
     return arr;
   }
-
-  // Else parse a single expression
   const arr = parseWhereExpression(expression);
   if (arr.length === 0) return {};
   if (arr.length === 1) return arr[0];
   return arr;
 }
 
-/** 
- * Check if object is { $and: ... }
- */
 function isAndNode(obj: any): obj is { $and: WhereExpression[] } {
   return obj && typeof obj === "object" && "$and" in obj && Array.isArray(obj.$and);
 }
 
-/** 
- * Check if object is { $or: ... }
- */
 function isOrNode(obj: any): obj is { $or: WhereExpression[] } {
   return obj && typeof obj === "object" && "$or" in obj && Array.isArray(obj.$or);
 }
 
-/**
- * parseWhereExpression:
- *  - AND => cartesianAndMerge
- *  - OR  => flatten (via reduce+concat)
- *  - leaf => single array
- */
 function parseWhereExpression(expr: WhereExpression): Array<Record<string, any>> {
   if (isAndNode(expr)) {
     const childArrays = expr.$and.map((child) => parseWhereExpression(child));
     return cartesianAndMerge(childArrays);
   } else if (isOrNode(expr)) {
     const childArrays = expr.$or.map((child) => parseWhereExpression(child));
-    // Replace `.flat()` with a reduce+concat approach for older ES targets
     return childArrays.reduce((acc, arr) => acc.concat(arr), [] as Record<string, any>[]);
   } else {
-    // Leaf => single
     return [convertLeafToTypeOrmObject(expr)];
   }
 }
 
-/**
- * "Cartesian product" for AND => merge objects pairwise
- */
 function cartesianAndMerge(childArrays: Array<Array<Record<string, any>>>) {
   let result: Array<Record<string, any>> = [{}];
   for (const arr of childArrays) {
@@ -124,27 +83,16 @@ function cartesianAndMerge(childArrays: Array<Array<Record<string, any>>>) {
   return result;
 }
 
-/**
- * If it's a leaf, that means it's your Where class, e.g.
- *   { field, operation, value }
- * We build a nested object => { user: { name: ... } }
- */
 function convertLeafToTypeOrmObject(leaf: Where): Record<string, any> {
   const field = leaf.field;
   const operation = leaf.operation || "=";
   const value = leaf.value;
-
   const generatedValue = (value === null) ? IsNull() : generateRawSQL(value, operation);
-
-  // Build nested path
   const obj: Record<string, any> = {};
   setPropertyOfObject(field, obj, generatedValue);
   return obj;
 }
 
-/**
- * Deeply merges two objects that have nested paths
- */
 function deepMerge(target: Record<string, any>, source: Record<string, any>) {
   const output = { ...target };
   for (const key of Object.keys(source)) {
@@ -168,9 +116,6 @@ function deepMerge(target: Record<string, any>, source: Record<string, any>) {
   return output;
 }
 
-/**
- * Convert value + operation => TypeORM Raw or IsNull
- */
 function generateRawSQL(value: any, operation: string): any {
   let rawSQL;
   switch (typeof value) {
@@ -207,18 +152,12 @@ function generateRawSQL(value: any, operation: string): any {
       }
       break;
     default:
-      // boolean, undefined, etc.
       rawSQL = value;
       break;
   }
   return rawSQL;
 }
 
-/**
- * If field="user.person.name", 
- * setPropertyOfObject(field, {}, X)
- * => { user: { person: { name: X } } }
- */
 function setPropertyOfObject(path: string, object: Record<string, any>, value: any): void {
   const keys = path.split(".");
   let current = object;
@@ -235,29 +174,6 @@ function setPropertyOfObject(path: string, object: Record<string, any>, value: a
   }
 }
 
-/* ==========================
- *  YOUR EXISTING UTILITIES
- * ========================== */
-
-/**
- * Provide your VarTypes and OperationTypes if needed
- */
-export { VarTypes, OperationTypes };
-
-/**
- * If your "Where" is a class from "./classes/where.class"
- * it might look like this:
- *
- * export class Where {
- *   constructor(
- *     public field: string,
- *     public operation?: string,
- *     public value?: any
- *   ) {}
- * }
- */
-// We assume you import it above
-
 enum MyLocalWhereOffset {
   KEY = 0,
   OPERATION = 1,
@@ -265,23 +181,12 @@ enum MyLocalWhereOffset {
   NUMBER_OF_PROPERTIES = 3,
 }
 
-/** Minimal property interface for getAllKeysFromObject usage */
-interface MyLocalProperty {
-  path: string;
-  isObject: boolean;
-}
-
-/** 
- * Return a minimal set of relationships from a where object. 
- * If you rely on nested logic, you might need to adapt or remove.
- */
 export function getRelations(where: object): object {
   if (!where) return {};
   const object: any = {};
-  const keys = getUniqueKeysFromObject(where); // => string[]
-
+  const keys = getUniqueKeysFromObject(where);
   for (let index = 0; index < keys.length; index += MyLocalWhereOffset.NUMBER_OF_PROPERTIES) {
-    const strKey = String(keys[index]); // cast to string
+    const strKey = String(keys[index]);
     const pathVal = getPropertyFromObject(strKey, where);
     if (typeof pathVal === "string" && pathVal.includes(".")) {
       const parts = pathVal.split(".");
@@ -292,16 +197,6 @@ export function getRelations(where: object): object {
   return object;
 }
 
-/**
- * A naive approach for turning an object into an array of { key: value }.
- */
-function reduceWhereObject(object: object): Array<object> {
-  return Object.entries(object).map(([k, v]) => ({ [k]: v }));
-}
-
-/**
- * Example "getOrder" for sorting
- */
 export function getOrder(order: Order): object {
   if (!order) return {};
   const obj: any = {};
@@ -309,9 +204,6 @@ export function getOrder(order: Order): object {
   return obj;
 }
 
-/**
- * For scanning object keys
- */
 function getAllKeysFromObject<T extends object>(obj: T, lastPath: string = ""): any {
   return Object.entries(obj).reduce((result: string[], [key, value]) => {
     const path = lastPath ? `${lastPath}.${key}` : key;
@@ -325,18 +217,12 @@ function getAllKeysFromObject<T extends object>(obj: T, lastPath: string = ""): 
   }, []);
 }
 
-/**
- * Return a unique list of string paths
- */
 function getUniqueKeysFromObject(object: object): string[] {
   const arr = getAllKeysFromObject(object);
   const paths = arr.map((el: any) => el.path as string);
   return Array.from(new Set(paths));
 }
 
-/**
- * Return the property from an object at a dot path, e.g. "user.person.name"
- */
 function getPropertyFromObject(path: string, obj: object): any {
   if (!path) return null;
   const segments = path.split(".");
@@ -351,7 +237,4 @@ function getPropertyFromObject(path: string, obj: object): any {
   return current;
 }
 
-/** 
- * Export other classes if needed
- */
-export { Order, Search, Where, FindParams };
+export { Order, Search, Where, FindParams, VarTypes, OperationTypes };
