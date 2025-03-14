@@ -43,6 +43,22 @@ Using OR & AND:
 };
 </code></pre>
 
+is equivalent in TypeORM to (you have to use cartesian products because of [TypeORM's documentation on OR & AND](https://orkhan.gitbook.io/typeorm/docs/find-options)):
+
+```javascript
+const where = [
+  {
+    storeId: 1,
+    dateStart: Raw(alias => `${alias} <= '2025-01-01'`),
+    dateEnd: Raw(alias => `${alias} >= '2025-01-31'`),
+  },
+  {
+    storeId: 1,
+    dateStart: IsNull(),
+    dateEnd: IsNull(),
+  },
+```
+
 will execute following query:
 
 ```sql
