@@ -57,6 +57,7 @@ const where = [
     dateStart: IsNull(),
     dateEnd: IsNull(),
   },
+  ]
 ```
 
 will execute following query:
