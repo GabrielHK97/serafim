@@ -43,6 +43,9 @@ export class User {
 export class ProfilePicture {
 	@PrimaryGeneratedColumn()
 	id: number;
+
+	@Column()
+	path: string;
 }
 ```
 
