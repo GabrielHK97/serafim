@@ -24,10 +24,10 @@ export class User {
 	@PrimaryGeneratedColumn()
 	id: number;
 
-	@Column({type: 'varchar'})
+	@Column()
 	username: string;
 
-	@Column({type: 'varchar'})
+	@Column()
 	password: string;
 
 	@OneToOne(() => Person)
@@ -55,10 +55,10 @@ export class Person {
 	@PrimaryGeneratedColumn()
 	id: number;
 
-	@Column({type: 'varchar'})
+	@Column()
 	name: string;
 
-	@Column({type: 'varchar'})
+	@Column()
 	surname: string;
 
 	@OneToOne(() => Address)
@@ -72,10 +72,10 @@ export class Address {
 	@PrimaryGeneratedColumn()
 	id: number;
 
-	@Column({type: 'varchar'})
+	@Column()
 	address: string;
 
-	@Column({type: 'int'})
+	@Column()
 	zip: number;
 }
 ```
