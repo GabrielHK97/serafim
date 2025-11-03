@@ -21,19 +21,7 @@ export function OR(...conditions: WhereExpression[]): WhereExpression {
   return { $or: conditions };
 }
 
-enum WhereOffset {
-  KEY = 0,
-  OPERATION = 1,
-  VALUE = 2,
-  NUMBER_OF_PROPERTIES = 3,
-}
-
-interface Property {
-  path: string;
-  isObject: boolean;
-}
-
-export function getWhere(expression: WhereExpression | WhereExpressionArray): object | object[] {
+function getWhere(expression: WhereExpression | WhereExpressionArray): object | object[] {
   if (!expression) return {};
   if (Array.isArray(expression)) {
     if (expression.length === 0) return {};
@@ -121,7 +109,8 @@ function generateRawSQL(value: any, operation: string): any {
   switch (typeof value) {
     case VarTypesEnum.STRING:
       rawSQL = Raw((alias) => {
-        if ([OperationTypesEnum.NULL, OperationTypesEnum.TRUE, OperationTypesEnum.FALSE].includes(value)) {
+        const nullishValues = [OperationTypesEnum.NULL, OperationTypesEnum.TRUE, OperationTypesEnum.FALSE];
+        if (nullishValues.indexOf(value) !== -1) {
           return `${alias} ${operation} ${value}`;
         }
         return `${alias} ${operation} '${value}'`;
@@ -174,30 +163,28 @@ function setPropertyOfObject(path: string, object: Record<string, any>, value: a
   }
 }
 
-enum MyLocalWhereOffset {
-  KEY = 0,
-  OPERATION = 1,
-  VALUE = 2,
-  NUMBER_OF_PROPERTIES = 3,
-}
-
-export function getRelations(where: object): object {
+function getRelations(where: object): object {
   if (!where) return {};
-  const object: any = {};
+  
+  const relations: Record<string, boolean> = {};
   const keys = getUniqueKeysFromObject(where);
-  for (let index = 0; index < keys.length; index += MyLocalWhereOffset.NUMBER_OF_PROPERTIES) {
-    const strKey = String(keys[index]);
-    const pathVal = getPropertyFromObject(strKey, where);
-    if (typeof pathVal === "string" && pathVal.includes(".")) {
-      const parts = pathVal.split(".");
-      parts.pop();
-      if (parts.length > 0) setPropertyOfObject(parts.join("."), object, true);
+  
+  for (const key of keys) {
+    const pathValue = getPropertyFromObject(key, where);
+    
+    // Check if the path value is a string containing a dot (indicating a relation)
+    if (typeof pathValue === "string" && pathValue.indexOf(".") !== -1) {
+      const relationPath = pathValue.split(".").slice(0, -1).join(".");
+      if (relationPath) {
+        setPropertyOfObject(relationPath, relations, true);
+      }
     }
   }
-  return object;
+  
+  return relations;
 }
 
-export function getOrder(order: Order): object {
+function getOrder(order: Order): object {
   if (!order) return {};
   const obj: any = {};
   setPropertyOfObject(order.field, obj, order.sortOrder);
@@ -237,4 +224,4 @@ function getPropertyFromObject(path: string, obj: object): any {
   return current;
 }
 
-export { Order, Search, Where, FindParams, VarTypesEnum as VarTypes, OperationTypesEnum as OperationTypes };
+export { Order, Search, Where, FindParams, VarTypesEnum, OperationTypesEnum, getRelations, getWhere, getOrder };
