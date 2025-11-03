@@ -1,4 +1,4 @@
-export const VarTypes = {
+export const VarTypesEnum = {
     STRING: 'string',
     DATE: 'date',
     NUMBER: 'number',

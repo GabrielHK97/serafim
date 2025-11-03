@@ -1,4 +1,4 @@
-export const OperationTypes = {
+export const OperationTypesEnum = {
     ILIKE: 'ILIKE',
     LIKE: 'LIKE',
     IN: 'IN',

@@ -1,6 +1,6 @@
 import { Raw, IsNull } from "typeorm";
-import { OperationTypes } from "./constants/operation-types.constants";
-import { VarTypes } from "./constants/var-types.constants";
+import { OperationTypesEnum } from "./enums/operation-types.enum";
+import { VarTypesEnum } from "./enums/var-types.enum";
 import { Order } from "./classes/order.class";
 import { Search } from "./classes/search.class";
 import { Where } from "./classes/where.class";
@@ -119,23 +119,23 @@ function deepMerge(target: Record<string, any>, source: Record<string, any>) {
 function generateRawSQL(value: any, operation: string): any {
   let rawSQL;
   switch (typeof value) {
-    case VarTypes.STRING:
+    case VarTypesEnum.STRING:
       rawSQL = Raw((alias) => {
-        if ([OperationTypes.NULL, OperationTypes.TRUE, OperationTypes.FALSE].includes(value)) {
+        if ([OperationTypesEnum.NULL, OperationTypesEnum.TRUE, OperationTypesEnum.FALSE].includes(value)) {
           return `${alias} ${operation} ${value}`;
         }
         return `${alias} ${operation} '${value}'`;
       });
       break;
-    case VarTypes.NUMBER:
-    case VarTypes.BIGINT:
+    case VarTypesEnum.NUMBER:
+    case VarTypesEnum.BIGINT:
       rawSQL = Raw((alias) => `${alias} ${operation} ${value}`);
       break;
-    case VarTypes.OBJECT:
+    case VarTypesEnum.OBJECT:
       if (value instanceof Date) {
         rawSQL = Raw((alias) => `${alias} ${operation} '${value.toISOString()}'`);
       } else if (Array.isArray(value)) {
-        if (operation === OperationTypes.BETWEEN) {
+        if (operation === OperationTypesEnum.BETWEEN) {
           rawSQL = Raw((alias) => {
             const left =
               typeof value[0] === "number" ? value[0] : `'${value[0]}'`;
@@ -143,7 +143,7 @@ function generateRawSQL(value: any, operation: string): any {
               typeof value[1] === "number" ? value[1] : `'${value[1]}'`;
             return `${alias} BETWEEN ${left} AND ${right}`;
           });
-        } else if (operation === OperationTypes.IN) {
+        } else if (operation === OperationTypesEnum.IN) {
           const v = value
             .map((val) => (typeof val === "number" ? val : `'${val}'`))
             .join(",");
@@ -237,4 +237,4 @@ function getPropertyFromObject(path: string, obj: object): any {
   return current;
 }
 
-export { Order, Search, Where, FindParams, VarTypes, OperationTypes };
+export { Order, Search, Where, FindParams, VarTypesEnum as VarTypes, OperationTypesEnum as OperationTypes };

@@ -1,6 +1,6 @@
-import { OperationTypes } from "../constants/operation-types.constants";
+import { OperationTypesEnum } from "../enums/operation-types.enum";
 
-export type OperationType = typeof OperationTypes[keyof typeof OperationTypes];
+export type OperationType = typeof OperationTypesEnum[keyof typeof OperationTypesEnum];
 
 export class Where {
   field?: string;
@@ -9,7 +9,7 @@ export class Where {
 
   constructor(field?: string, operation?: OperationType, value?: any) {
     this.field = field ?? "";
-    this.operation = operation ?? OperationTypes.EQUAL;
+    this.operation = operation ?? OperationTypesEnum.EQUAL;
     this.value = value ?? "";
   }
 }
