@@ -1,6 +1,6 @@
 {
   "name": "serafim",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "description": "A library that provides custom JSON notation for the find method of TypeORM",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -13,7 +13,14 @@
     "url": "git+https://github.com/GabrielHK97/serafim.git"
   },
   "keywords": [
-    "typeorm"
+    "typeorm",
+    "dynamic queries",
+    "dynamic",
+    "queries",
+    "find method",
+    "find options",
+    "options",
+    "find"
   ],
   "author": "Gabriel Kubota",
   "license": "MIT",
