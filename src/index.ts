@@ -1,9 +1,25 @@
 import { Raw, IsNull } from "typeorm";
-import { OperationTypes } from "./constants/operation-types.constants";
-import { VarTypes } from "./constants/var-types.constants";
+import { OperationTypesEnum } from "./enums/operation-types.enum";
+import { VarTypesEnum } from "./enums/var-types.enum";
 import { Order } from "./classes/order.class";
 import { Search } from "./classes/search.class";
 import { Where } from "./classes/where.class";
+import { FindParams } from "./classes/find-params.class";
+
+export type WhereExpression =
+  | Where
+  | { $and: WhereExpression[] }
+  | { $or: WhereExpression[] };
+
+export type WhereExpressionArray = WhereExpression[];
+
+export function AND(...conditions: WhereExpression[]): WhereExpression {
+  return { $and: conditions };
+}
+
+export function OR(...conditions: WhereExpression[]): WhereExpression {
+  return { $or: conditions };
+}
 
 enum WhereOffset {
   KEY = 0,
@@ -17,78 +33,121 @@ interface Property {
   isObject: boolean;
 }
 
-function isNotLastPathElement(index: number, path: string): boolean {
-  return index < path.split(".").length - 1;
+export function getWhere(expression: WhereExpression | WhereExpressionArray): object | object[] {
+  if (!expression) return {};
+  if (Array.isArray(expression)) {
+    if (expression.length === 0) return {};
+    const exprObject = { $and: expression };
+    const arr = parseWhereExpression(exprObject);
+    if (arr.length === 0) return {};
+    if (arr.length === 1) return arr[0];
+    return arr;
+  }
+  const arr = parseWhereExpression(expression);
+  if (arr.length === 0) return {};
+  if (arr.length === 1) return arr[0];
+  return arr;
 }
 
-function isNumber(number: string): boolean {
-  return Number.isInteger(Number.parseInt(number));
+function isAndNode(obj: any): obj is { $and: WhereExpression[] } {
+  return obj && typeof obj === "object" && "$and" in obj && Array.isArray(obj.$and);
 }
 
-function generatePathOfWhereObject(keys: string, key: string): string {
-  let path = keys.split(".");
-  path.pop();
-  return [...path, key].join(".");
+function isOrNode(obj: any): obj is { $or: WhereExpression[] } {
+  return obj && typeof obj === "object" && "$or" in obj && Array.isArray(obj.$or);
+}
+
+function parseWhereExpression(expr: WhereExpression): Array<Record<string, any>> {
+  if (isAndNode(expr)) {
+    const childArrays = expr.$and.map((child) => parseWhereExpression(child));
+    return cartesianAndMerge(childArrays);
+  } else if (isOrNode(expr)) {
+    const childArrays = expr.$or.map((child) => parseWhereExpression(child));
+    return childArrays.reduce((acc, arr) => acc.concat(arr), [] as Record<string, any>[]);
+  } else {
+    return [convertLeafToTypeOrmObject(expr)];
+  }
+}
+
+function cartesianAndMerge(childArrays: Array<Array<Record<string, any>>>) {
+  let result: Array<Record<string, any>> = [{}];
+  for (const arr of childArrays) {
+    const newResult: Array<Record<string, any>> = [];
+    for (const existingObj of result) {
+      for (const currentObj of arr) {
+        newResult.push(deepMerge(existingObj, currentObj));
+      }
+    }
+    result = newResult;
+  }
+  return result;
+}
+
+function convertLeafToTypeOrmObject(leaf: Where): Record<string, any> {
+  const field = leaf.field;
+  const operation = leaf.operation || "=";
+  const value = leaf.value;
+  const generatedValue = (value === null) ? IsNull() : generateRawSQL(value, operation);
+  const obj: Record<string, any> = {};
+  setPropertyOfObject(field, obj, generatedValue);
+  return obj;
+}
+
+function deepMerge(target: Record<string, any>, source: Record<string, any>) {
+  const output = { ...target };
+  for (const key of Object.keys(source)) {
+    const val = source[key];
+    if (
+      val &&
+      typeof val === "object" &&
+      !Array.isArray(val) &&
+      !(val instanceof Date) &&
+      !(val.constructor?.name === "FindOperator")
+    ) {
+      if (output[key] && typeof output[key] === "object") {
+        output[key] = deepMerge(output[key], val);
+      } else {
+        output[key] = { ...val };
+      }
+    } else {
+      output[key] = val;
+    }
+  }
+  return output;
 }
 
 function generateRawSQL(value: any, operation: string): any {
   let rawSQL;
   switch (typeof value) {
-    case VarTypes.STRING:
+    case VarTypesEnum.STRING:
       rawSQL = Raw((alias) => {
-        return [
-          OperationTypes.NULL,
-          OperationTypes.TRUE,
-          OperationTypes.FALSE,
-        ].includes(value)
-          ? `${alias} ${operation} ${value}`
-          : `${alias} ${operation} '${value}'`;
-      });
-      break;
-    case VarTypes.NUMBER:
-      rawSQL = Raw((alias) => {
-        return `${alias} ${operation} ${value}`;
-      });
-      break;
-    case VarTypes.BIGINT:
-      rawSQL = Raw((alias) => {
-        return `${alias} ${operation} ${value}`;
-      });
-      break;
-    case VarTypes.OBJECT:
-      if (value instanceof Date) {
-        rawSQL = Raw((alias) => {
-          return `${alias} ${operation} '${value}'`;
-        });
-      }
-      if (Array.isArray(value)) {
-        if (operation === OperationTypes.BETWEEN) {
-          rawSQL = Raw((alias) => {
-            return `${alias} ${OperationTypes.BETWEEN} ${
-              typeof value[0] !== VarTypes.NUMBER ||
-              typeof value[0] !== VarTypes.BIGINT
-                ? `'${value[0]}'`
-                : value[0]
-            } AND ${
-              typeof value[1] !== VarTypes.NUMBER ||
-              typeof value[1] !== VarTypes.BIGINT
-                ? `'${value[1]}'`
-                : value[1]
-            }`;
-          });
+        if ([OperationTypesEnum.NULL, OperationTypesEnum.TRUE, OperationTypesEnum.FALSE].includes(value)) {
+          return `${alias} ${operation} ${value}`;
         }
-        if (operation === OperationTypes.IN) {
-          const v =
-            typeof value !== VarTypes.BIGINT || typeof value !== VarTypes.NUMBER
-              ? `(${value
-                  .map((val) => {
-                    return `'${val}'`;
-                  })
-                  .join(",")})`
-              : `(${value.join(",")})`;
+        return `${alias} ${operation} '${value}'`;
+      });
+      break;
+    case VarTypesEnum.NUMBER:
+    case VarTypesEnum.BIGINT:
+      rawSQL = Raw((alias) => `${alias} ${operation} ${value}`);
+      break;
+    case VarTypesEnum.OBJECT:
+      if (value instanceof Date) {
+        rawSQL = Raw((alias) => `${alias} ${operation} '${value.toISOString()}'`);
+      } else if (Array.isArray(value)) {
+        if (operation === OperationTypesEnum.BETWEEN) {
           rawSQL = Raw((alias) => {
-            return `${alias} ${OperationTypes.IN} ${v}`;
+            const left =
+              typeof value[0] === "number" ? value[0] : `'${value[0]}'`;
+            const right =
+              typeof value[1] === "number" ? value[1] : `'${value[1]}'`;
+            return `${alias} BETWEEN ${left} AND ${right}`;
           });
+        } else if (operation === OperationTypesEnum.IN) {
+          const v = value
+            .map((val) => (typeof val === "number" ? val : `'${val}'`))
+            .join(",");
+          rawSQL = Raw((alias) => `${alias} IN (${v})`);
         }
       }
       break;
@@ -99,153 +158,83 @@ function generateRawSQL(value: any, operation: string): any {
   return rawSQL;
 }
 
-function getAllKeysFromObject<T extends object>(
-  object: T,
-  lastPath: string = ""
-): any {
-  return Object.entries(object).reduce((result: string[], [key, value]) => {
-    const currentObject: Property = {
-      path: lastPath
-        ? Array.isArray(object) && lastPath.split("").includes(".")
-          ? lastPath
-          : `${lastPath}.${key}`
-        : key,
-      isObject: typeof value === VarTypes.OBJECT,
-    };
+function setPropertyOfObject(path: string, object: Record<string, any>, value: any): void {
+  const keys = path.split(".");
+  let current = object;
+  for (let i = 0; i < keys.length; i++) {
+    const key = keys[i];
+    if (i === keys.length - 1) {
+      current[key] = value;
+    } else {
+      if (!current[key]) {
+        current[key] = {};
+      }
+      current = current[key];
+    }
+  }
+}
+
+enum MyLocalWhereOffset {
+  KEY = 0,
+  OPERATION = 1,
+  VALUE = 2,
+  NUMBER_OF_PROPERTIES = 3,
+}
+
+export function getRelations(where: object): object {
+  if (!where) return {};
+  const object: any = {};
+  const keys = getUniqueKeysFromObject(where);
+  for (let index = 0; index < keys.length; index += MyLocalWhereOffset.NUMBER_OF_PROPERTIES) {
+    const strKey = String(keys[index]);
+    const pathVal = getPropertyFromObject(strKey, where);
+    if (typeof pathVal === "string" && pathVal.includes(".")) {
+      const parts = pathVal.split(".");
+      parts.pop();
+      if (parts.length > 0) setPropertyOfObject(parts.join("."), object, true);
+    }
+  }
+  return object;
+}
+
+export function getOrder(order: Order): object {
+  if (!order) return {};
+  const obj: any = {};
+  setPropertyOfObject(order.field, obj, order.sortOrder);
+  return obj;
+}
+
+function getAllKeysFromObject<T extends object>(obj: T, lastPath: string = ""): any {
+  return Object.entries(obj).reduce((result: string[], [key, value]) => {
+    const path = lastPath ? `${lastPath}.${key}` : key;
+    const isObj = (value && typeof value === "object");
     return result
       .concat([
-        currentObject,
-        ...(currentObject.isObject && value !== null
-          ? getAllKeysFromObject(value, currentObject.path)
-          : []),
+        { path, isObject: isObj },
+        ...(isObj ? getAllKeysFromObject(value, path) : []),
       ])
-      .filter((element: any) => {
-        return !element.isObject;
-      });
+      .filter((element: any) => !element.isObject);
   }, []);
 }
 
-function getUniqueKeysFromObject(object: any) {
-  return [
-    ...new Set(
-      getAllKeysFromObject(object).map((element: Property) => {
-        return element.path;
-      })
-    ),
-  ] as any;
+function getUniqueKeysFromObject(object: object): string[] {
+  const arr = getAllKeysFromObject(object);
+  const paths = arr.map((el: any) => el.path as string);
+  return Array.from(new Set(paths));
 }
 
-function getPropertyFromObject(path: string, object: any): any {
-  let property = object;
-  path.split(".").forEach((key) => {
-    if (property) property = property[key];
-  });
-  if (property != undefined) {
-    return property;
-  } else {
-    return "";
+function getPropertyFromObject(path: string, obj: object): any {
+  if (!path) return null;
+  const segments = path.split(".");
+  let current: any = obj;
+  for (const seg of segments) {
+    if (current && typeof current === "object" && seg in current) {
+      current = current[seg];
+    } else {
+      return "";
+    }
   }
+  return current;
 }
 
-function setPropertyOfObject(path: string, object: any, value: any): void {
-  path.split(".").forEach((key, index) => {
-    object[key] = isNotLastPathElement(index, path)
-      ? object[key]
-        ? object[key]
-        : {}
-      : value;
-    if (object) object = object[key];
-  });
-}
-
-function setPropertyWhereOfObject(path: string, object: any, value: any): void {
-  path.split(".").forEach((key, index) => {
-    object[isNumber(key) ? 0 : key] = isNotLastPathElement(index, path)
-      ? object[isNumber(key) ? 0 : key]
-        ? object[isNumber(key) ? 0 : key]
-        : isNumber(key)
-        ? []
-        : {}
-      : value;
-    if (object) object = object[isNumber(key) ? 0 : key];
-  });
-}
-
-function removeLastElementOfPath(path: string): string {
-  let p = path.split(".");
-  p.pop();
-  return p.join(".");
-}
-
-function reduceWhereObject(obj: any) {
-  const object = [];
-  const keys = [
-    ...new Set(
-      getUniqueKeysFromObject(obj).map((key) => {
-        return removeLastElementOfPath(key);
-      })
-    ),
-  ] as string[];
-  keys.forEach((key) => {
-    setPropertyWhereOfObject(key, object, getPropertyFromObject(key, obj));
-  });
-  return object;
-}
-
-export function getRelations(where: any): any {
-  const object: any = {};
-  const keys = getUniqueKeysFromObject(where);
-  for (
-    let index = 0;
-    index < keys.length;
-    index += WhereOffset.NUMBER_OF_PROPERTIES
-  ) {
-    const key = getPropertyFromObject(
-      keys[index + WhereOffset.KEY],
-      where
-    ).split(".");
-    key.pop();
-    if (key.length > 0) setPropertyOfObject(key.join("."), object, true);
-  }
-  return object;
-}
-
-export function getWhere(where: any): Array<any> {
-  const object: any = {};
-  const keys = getUniqueKeysFromObject(where);
-  for (
-    let index = 0;
-    index < keys.length;
-    index += WhereOffset.NUMBER_OF_PROPERTIES
-  ) {
-    const key = getPropertyFromObject(keys[index + WhereOffset.KEY], where);
-    const val = getPropertyFromObject(keys[index + WhereOffset.VALUE], where);
-    let op = getPropertyFromObject(keys[index + WhereOffset.OPERATION], where);
-    const value = val ? generateRawSQL(val, op) : IsNull();
-    const path = generatePathOfWhereObject(keys[index + WhereOffset.KEY], key);
-    setPropertyOfObject(path, object, value);
-  }
-  return reduceWhereObject(object)[0];
-}
-
-export function getOrder(orders: Order[]): any {
-  let object: any = {};
-  orders.forEach((order) => {
-    setPropertyOfObject(order.field, object, order.sortOrder);
-  });
-  return object;
-}
-
-export { VarTypes, OperationTypes, Where, Order, Search };
-
-//console.log(
-//  (
-//    getWhere([
-//      {
-//        field: "debt.dueDate",
-//        operation: OperationTypes.IN,
-//        value: [OperationTypes.BETWEEN, OperationTypes.ILIKE],
-//      },
-//    ]) as any
-//  ).debt.dueDate._getSql()
-//);
+export { Order, Search, Where, FindParams, VarTypesEnum as VarTypes, OperationTypesEnum as OperationTypes };
