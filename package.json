@@ -1,6 +1,6 @@
 {
   "name": "serafim",
-  "version": "2.2.4",
+  "version": "2.2.7",
   "description": "A library that provides custom JSON notation for the find method of TypeORM",
   "main": "lib/index.js",
   "files": [

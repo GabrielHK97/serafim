@@ -13,11 +13,11 @@ export type WhereExpression =
 
 export type WhereExpressionArray = WhereExpression[];
 
-export function AND(...conditions: WhereExpression[]): WhereExpression {
+function AND(...conditions: WhereExpression[]): WhereExpression {
   return { $and: conditions };
 }
 
-export function OR(...conditions: WhereExpression[]): WhereExpression {
+function OR(...conditions: WhereExpression[]): WhereExpression {
   return { $or: conditions };
 }
 
@@ -112,6 +112,12 @@ function generateRawSQL(value: any, operation: string): any {
         const nullishValues = [OperationTypesEnum.NULL, OperationTypesEnum.TRUE, OperationTypesEnum.FALSE];
         if (nullishValues.indexOf(value) !== -1) {
           return `${alias} ${operation} ${value}`;
+        }
+        // Add wildcard matching for LIKE and ILIKE operations
+        if (operation === OperationTypesEnum.LIKE || operation === OperationTypesEnum.ILIKE) {
+          // Escape special SQL pattern characters
+          const escapedValue = value.replace(/[%_]/g, '\\$&');
+          return `${alias} ${operation} '%${escapedValue}%'`;
         }
         return `${alias} ${operation} '${value}'`;
       });
@@ -224,4 +230,4 @@ function getPropertyFromObject(path: string, obj: object): any {
   return current;
 }
 
-export { Order, Search, Where, FindParams, VarTypesEnum, OperationTypesEnum, getRelations, getWhere, getOrder };
+export { Order, Search, Where, FindParams, VarTypesEnum, OperationTypesEnum, getRelations, getWhere, getOrder, OR, AND };
