@@ -5,11 +5,11 @@ export type OperationType = typeof OperationTypesEnum[keyof typeof OperationType
 export class Where {
   field?: string;
   operation?: OperationType;
-  value?: any;
+  searchTerm?: any;
 
-  constructor(field?: string, operation?: OperationType, value?: any) {
+  constructor(field?: string, operation?: OperationType, searchTerm?: any) {
     this.field = field ?? "";
     this.operation = operation ?? OperationTypesEnum.EQUAL;
-    this.value = value ?? "";
+    this.searchTerm = searchTerm ?? "";
   }
 }

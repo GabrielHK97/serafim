@@ -74,7 +74,7 @@ function cartesianAndMerge(childArrays: Array<Array<Record<string, any>>>) {
 function convertLeafToTypeOrmObject(leaf: Where): Record<string, any> {
   const field = leaf.field;
   const operation = leaf.operation || "=";
-  const value = leaf.value;
+  const value = leaf.searchTerm;
   const generatedValue = (value === null) ? IsNull() : generateRawSQL(value, operation);
   const obj: Record<string, any> = {};
   setPropertyOfObject(field, obj, generatedValue);

@@ -148,8 +148,8 @@ const search: Search = {
 //backend
 userRepository.find({
 	relations: getRelations(search.where), // search.where, not search.relations
-	where: getWheres(search.where),
-	order: getOrders(search.order),
+	where: getWhere(search.where),
+	order: getOrder(search.order),
 })
 ```
 
