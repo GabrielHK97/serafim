@@ -1,7 +1,7 @@
 import { Raw, IsNull } from "typeorm";
 import { OperationTypesEnum } from "./enums/operation-types.enum";
 import { VarTypesEnum } from "./enums/var-types.enum";
-import { Order } from "./classes/order.class";
+import { Order, SortConstants } from "./classes/order.class";
 import { Search } from "./classes/search.class";
 import { Where } from "./classes/where.class";
 import { FindParams } from "./classes/find-params.class";
@@ -230,4 +230,4 @@ function getPropertyFromObject(path: string, obj: object): any {
   return current;
 }
 
-export { Order, Search, Where, FindParams, VarTypesEnum, OperationTypesEnum, getRelations, getWhere, getOrder, OR, AND };
+export { Order, SortConstants, Search, Where, FindParams, VarTypesEnum, OperationTypesEnum, getRelations, getWhere, getOrder, OR, AND };

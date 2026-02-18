@@ -1,4 +1,4 @@
-export declare enum SortConstants {
+export enum SortConstants {
   UNSORTED = "unsorted",
   ASC = "asc",
   DESC = "desc",
