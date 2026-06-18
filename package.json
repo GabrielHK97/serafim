@@ -1,6 +1,6 @@
 {
   "name": "serafim",
-  "version": "2.2.8",
+  "version": "3.0.0",
   "description": "A library that provides custom JSON notation for the find method of TypeORM",
   "main": "lib/index.js",
   "files": [
@@ -8,8 +8,10 @@
   ],
   "types": "lib/index.d.ts",
   "scripts": {
-    "launch": "tsc && npm publish",
-    "tests": "npx ts-node src/tests.ts"
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "launch": "npm run test && tsc && npm publish"
   },
   "repository": {
     "type": "git",
@@ -32,7 +34,8 @@
   },
   "homepage": "https://github.com/GabrielHK97/serafim#readme",
   "devDependencies": {
-    "typescript": "^5.1.6"
+    "typescript": "^5.1.6",
+    "vitest": "^4.1.9"
   },
   "dependencies": {
     "typeorm": "^0.3.17"

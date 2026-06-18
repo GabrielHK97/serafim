@@ -1,78 +1,83 @@
-# OR & AND
+# AND & OR
 
-Both OR and AND can be used to query custom data:
+`AND` and `OR` combine conditions and can be nested arbitrarily. In 3.x they are the
+**only** way to combine conditions — a bare array throws.
 
-Using OR & AND:
+## Example
 
-<pre class="language-javascript"><code class="lang-javascript"><strong>const search: Search = {
-</strong>  where: [
+```ts
+import { AND, OR, OperationTypesEnum, getWhere } from "serafim";
+
+const where = AND(
+  {
+    field: "storeId",
+    operation: OperationTypesEnum.EQUAL,
+    searchTerm: 1,
+  },
+  OR(
     AND(
       {
-        field: "storeId",
-        operation: OperationTypes.EQUAL,
-        value: 1,
+        field: "dateStart",
+        operation: OperationTypesEnum.LESS_EQUAL,
+        searchTerm: "2025-01-01",
       },
-      OR(
-        AND(
-          {
-            field: "dateStart",
-            operation: OperationTypes.LESS_EQUAL,
-            value: '2025-01-01',
-          },
-          {
-            field: "dateEnd",
-            operation: OperationTypes.GREATER_EQUAL,
-            value: '2025-01-31',
-          }
-        ),
-        AND(
-          {
-            field: "dateStart",
-            operation: OperationTypes.EQUAL,
-            value: null,
-          },
-          {
-            field: "dateEnd",
-            operation: OperationTypes.EQUAL,
-            value: null,
-          }
-        )
-      )
+      {
+        field: "dateEnd",
+        operation: OperationTypesEnum.GREATER_EQUAL,
+        searchTerm: "2025-01-31",
+      }
     ),
-  ],
-};
-</code></pre>
+    AND(
+      { field: "dateStart", operation: OperationTypesEnum.NULL },
+      { field: "dateEnd", operation: OperationTypesEnum.NULL }
+    )
+  )
+);
 
-is equivalent in TypeORM to (you have to use cartesian products because of [TypeORM's documentation on OR & AND](https://orkhan.gitbook.io/typeorm/docs/find-options)):
+couponRepository.find({ where: getWhere(where) });
+```
 
-```javascript
+> Note: the `where` is the `AND(...)` expression **directly** — do not wrap it in an
+> array. In 2.x this example used `where: [ AND(...) ]`; that now throws.
+
+## How it maps to TypeORM
+
+`getWhere(where)` distributes the `AND` over the inner `OR` (the cartesian product
+that TypeORM's find API requires), producing an OR array of two AND objects:
+
+```ts
 const where = [
   {
-    storeId: 1,
-    dateStart: Raw(alias => `${alias} <= '2025-01-01'`),
-    dateEnd: Raw(alias => `${alias} >= '2025-01-31'`),
+    storeId: Equal(1),
+    dateStart: LessThanOrEqual("2025-01-01"),
+    dateEnd: MoreThanOrEqual("2025-01-31"),
   },
   {
-    storeId: 1,
+    storeId: Equal(1),
     dateStart: IsNull(),
     dateEnd: IsNull(),
   },
-  ]
+];
 ```
 
-will execute following query:
+See [TypeORM's documentation on OR & AND](https://orkhan.gitbook.io/typeorm/docs/find-options)
+for why the cartesian form is needed.
+
+## Resulting SQL
+
+All values are bound as parameters; the literals below are shown for readability only.
 
 ```sql
-SELECT * 
+SELECT *
 FROM coupon
 WHERE storeId = 1
   AND (
     (
-      dateStart <= '2025-01-01' 
+      dateStart <= '2025-01-01'
       AND dateEnd >= '2025-01-31'
     )
     OR (
-      dateStart IS NULL 
+      dateStart IS NULL
       AND dateEnd IS NULL
     )
   );

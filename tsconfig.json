@@ -1,16 +1,17 @@
 {
   "compilerOptions": {
     "incremental": true,            /* Enable incremental compilation */
-    "target": "es2017",                /* Specify ECMAScript target version: */
+    "target": "es2017",             /* Specify ECMAScript target version. */
+    "lib": ["ES2021"],              /* Runtime library APIs (flatMap, etc.). */
     "module": "commonjs",           /* 'none', 'commonjs', 'amd', 'system', etc */
-    "declaration": true,            /* Concatenate & emit output to single file.*/
+    "declaration": true,            /* Generate .d.ts files. */
     "outDir": "lib",                /* Redirect output to the directory. */
-    "esModuleInterop": true,        /* Enables intero between CommonJS and ES */
+    "rootDir": "src",               /* Keep emitted layout flat under lib/. */
+    "esModuleInterop": true,        /* Enables interop between CommonJS and ES */
     "skipLibCheck": true,           /* Skip type checking of declaration files. */
-    "forceConsistentCasingInFileNames": true, /* Disallow inconsistently */
+    "forceConsistentCasingInFileNames": true,
     "typeRoots": ["./node_modules/@types", "index.d.ts"]
   },
-  "include": [
-    "src"
-  ]
+  "include": ["src"],
+  "exclude": ["node_modules", "src/**/*.spec.ts", "src/__tests__/**"]
 }
